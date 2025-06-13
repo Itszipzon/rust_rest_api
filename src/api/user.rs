@@ -24,5 +24,5 @@ async fn get_user(req: HttpRequest, repo: Data<Repositories>, jwt: Data<JwtManag
 }
 
 pub fn scope() -> actix_web::Scope {
-    web::scope("/api/apps").service(get_user)
+    web::scope("/api/user").service(get_user)
 }
