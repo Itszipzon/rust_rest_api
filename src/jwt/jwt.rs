@@ -16,14 +16,15 @@ impl JwtManager {
         Self { secret }
     }
 
-    pub fn generate_token(&self, user_id: &str) -> Result<String, jsonwebtoken::errors::Error> {
+    pub fn generate_token(&self, username: &str, id: usize) -> Result<String, jsonwebtoken::errors::Error> {
         let expiration = Utc::now()
             .checked_add_signed(Duration::hours(24))
             .expect("valid timestamp")
             .timestamp() as usize;
 
         let claims = Claims {
-            sub: user_id.to_owned(),
+            sub: username.to_owned(),
+            id,
             exp: expiration,
         };
 
