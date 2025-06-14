@@ -6,6 +6,7 @@ use tokio_postgres::Error as PgError;
 use tokio_postgres::{Client, NoTls};
 
 use crate::dberror::DbError;
+use crate::tools;
 
 #[derive(Clone)]
 pub struct DbPool {
@@ -53,10 +54,20 @@ impl DbPool {
             .map(str::trim)
             .filter(|stmt| !stmt.is_empty());
 
-        for (i, statement) in statements.enumerate() {
-            println!("Executing SQL statement {}:\n{}", i + 1, statement);
+
+        for (_, statement) in statements.enumerate() {
+            println!("Trying to create table: {}", tools::table_name_from_statement(statement));
             client.execute(statement, &[]).await?;
         }
+
+        let user_insert = "INSERT INTO users (username, email, password) VALUES ($1, $2, $3);";
+
+        let password = bcrypt::hash("12345678", bcrypt::DEFAULT_COST)
+            .map_err(|_| DbError::HashingError).ok();
+
+        client
+            .execute(user_insert, &[&"admin", &"rune.molander@hotmail.com", &password])
+            .await?;
 
         Ok(())
     }

@@ -6,6 +6,7 @@ use tokio_postgres::Error as PgError;
 pub enum DbError {
     NotFound,
     DatabaseError(PgError),
+    HashingError(String),
 }
 
 impl fmt::Display for DbError {
@@ -13,6 +14,7 @@ impl fmt::Display for DbError {
         match *self {
             DbError::NotFound => write!(f, "Not found"),
             DbError::DatabaseError(ref err) => write!(f, "Database error: {}", err),
+            DbError::HashingError(ref msg) => write!(f, "Hashing error: {}", msg),
         }
     }
 }
