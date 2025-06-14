@@ -11,7 +11,7 @@ pub struct JwtManager {
 
 impl JwtManager {
     pub fn new() -> Self {
-        dotenv().ok(); // loads .env if not already
+        dotenv().ok();
         let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
         Self { secret }
     }
