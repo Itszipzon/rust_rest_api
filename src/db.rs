@@ -25,7 +25,6 @@ impl DbPool {
             }
         });
 
-        // THEN run queries
         let _ = DbPool::initiate_tables(&client).await;
 
         println!("Database connection established successfully!");
@@ -63,8 +62,9 @@ impl DbPool {
         let user_insert = "INSERT INTO users (username, email, password) VALUES ($1, $2, $3);";
 
         let password = bcrypt::hash("12345678", bcrypt::DEFAULT_COST)
-            .map_err(|_| DbError::HashingError).ok();
+            .map_err(|e| DbError::HashingError(e.to_string()))?;
 
+        println!("Inserting default user...");
         client
             .execute(user_insert, &[&"admin", &"rune.molander@hotmail.com", &password])
             .await?;

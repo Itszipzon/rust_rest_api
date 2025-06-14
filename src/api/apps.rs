@@ -8,7 +8,7 @@ async fn get_apps(repo: Data<Repositories>) -> HttpResponse {
   match repo.apps.get_apps().await {
       Ok(vessel_name) => HttpResponse::Ok().json(serde_json::json!({ "name": vessel_name })),
       Err(e) => HttpResponse::InternalServerError().body(
-          format!("Failed to retrieve vessel: {}", e)
+          format!("Failed to retrieve app: {}", e)
       ),
   }
 }

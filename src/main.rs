@@ -12,6 +12,7 @@ mod dberror;
 mod repository;
 mod jwt;
 mod tools;
+mod user;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

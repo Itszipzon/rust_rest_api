@@ -26,19 +26,15 @@ impl UserRepo {
         rows.into_iter().next().ok_or("User not found".to_string())
     }
 
-    pub async fn get_user_username(&self, username: &str) -> Result<String, String> {
+    pub async fn get_user_username(&self, username: &str) -> Result<tokio_postgres::Row, String> {
         let client = self.client.lock().await;
 
         let rows = client
-            .query("SELECT * FROM users WHERE username = $1", &[&username])
+            .query("SELECT * FROM users WHERE username = $1 OR email = $1", &[&username])
             .await
             .map_err(|e| e.to_string())?;
 
-        if let Some(row) = rows.get(0) {
-            Ok(row.get(0))
-        } else {
-            Err("Invalid username".to_string())
-        }
+        rows.into_iter().next().ok_or("User not found".to_string())
     }
 }
 
