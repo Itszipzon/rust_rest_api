@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use tokio::sync::Mutex;
 use tokio_postgres::Client;
 
-use crate::repository::Repository;
+use crate::{jwt::jwt::JwtManager, repository::Repository};
 
 #[derive(Clone)]
 pub struct UserRepo {
@@ -38,11 +38,21 @@ impl UserRepo {
             .await
             .map_err(|e| e.to_string())?;
 
-        if let Some(row) = rows.get(0) {
-            Ok(row.get(0))
-        } else {
-            Err("Invalid username or password".to_string())
+        if rows.is_empty() {
+            return Err("Invalid username".to_string());
         }
+
+        let row = &rows[0];
+
+        let stored_password: String = row.get("password");
+
+        let verify = bcrypt::verify(password, &stored_password);
+
+        if verify.is_err() || !verify.unwrap() {
+            return Err("Invalid password".to_string());
+        }
+
+        Ok("Login successful".to_string())
     }
 }
 

@@ -16,7 +16,7 @@ impl JwtManager {
         Self { secret }
     }
 
-    pub fn generate_token(&self, username: &str, id: usize) -> Result<String, jsonwebtoken::errors::Error> {
+    pub fn generate_token(&self, username: &str, id: u32) -> Result<String, jsonwebtoken::errors::Error> {
         let expiration = Utc::now()
             .checked_add_signed(Duration::hours(24))
             .expect("valid timestamp")

@@ -11,7 +11,6 @@ mod repositories;
 mod dberror;
 mod repository;
 mod jwt;
-mod bcrypt;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

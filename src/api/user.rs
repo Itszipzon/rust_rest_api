@@ -17,6 +17,8 @@ async fn get_user(req: HttpRequest, repo: Data<Repositories>, jwt: Data<JwtManag
         None => return HttpResponse::Unauthorized().body("Missing or invalid token format"),
     };
 
+    let _ = repo.user.get_user(1);
+
     match jwt.validate_token(token) {
         Ok(claims) => HttpResponse::Ok().body(format!("Welcome, {}!", claims.sub)),
         Err(_) => HttpResponse::Unauthorized().body("Token invalid or expired"),
