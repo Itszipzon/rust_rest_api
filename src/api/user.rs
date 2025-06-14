@@ -17,14 +17,20 @@ async fn get_user(req: HttpRequest, repo: Data<Repositories>, jwt: Data<JwtManag
         None => return HttpResponse::Unauthorized().body("Missing or invalid token format"),
     };
 
-    let _ = repo.user.get_user(1);
+    let user_row = match repo.user.get_user_id(1).await {
+        Ok(row) => row,
+        Err(_) => return HttpResponse::NotFound().body("User not found"),
+    };
 
-    match jwt.validate_token(token) {
-        Ok(claims) => HttpResponse::Ok().body(format!("Welcome, {}!", claims.sub)),
-        Err(_) => HttpResponse::Unauthorized().body("Token invalid or expired"),
-    }
+    println!("User {:#?}", user_row);
+
+    let username: String = match user_row.try_get("username") {
+        Ok(u) => u,
+        Err(_) => return HttpResponse::InternalServerError().body("Missing username field"),
+    };
+
+    HttpResponse::Ok().json(serde_json::json!({ "username": username }))
 }
-
 
 
 pub fn scope() -> actix_web::Scope {
