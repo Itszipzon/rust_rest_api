@@ -13,6 +13,7 @@ mod repository;
 mod jwt;
 mod tools;
 mod user;
+mod requests;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

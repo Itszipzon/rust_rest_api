@@ -4,7 +4,7 @@ use actix_web::{
 };
 use chrono::{DateTime, Utc};
 
-use crate::{jwt::jwt::JwtManager, repository::Repositories, user::login_request::LoginRequest};
+use crate::{jwt::jwt::JwtManager, repository::Repositories, requests::login_request::LoginRequest};
 
 #[get("")]
 async fn get_user(
@@ -32,80 +32,26 @@ async fn get_user(
         Err(_) => return HttpResponse::NotFound().body("User not found"),
     };
 
-    let id: i32 = match user_row.try_get("id") {
-        Ok(id) => id,
-        Err(_) => return HttpResponse::InternalServerError().body("Missing id field"),
-    };
-
-    let username: String = match user_row.try_get("username") {
-        Ok(u) => u,
-        Err(_) => return HttpResponse::InternalServerError().body("Missing username field"),
-    };
-
-    let email = match user_row.try_get::<&str, String>("email") {
-        Ok(e) => e,
-        Err(_) => return HttpResponse::InternalServerError().body("Missing email field"),
-    };
-
-    let created_at: DateTime<Utc> = match user_row.try_get("created_at") {
-        Ok(c) => c,
-        Err(e) => return HttpResponse::InternalServerError().body(format!("Missing created_at field for user {}", e)),
-    };
-
-    let terms: bool = match user_row.try_get("accepted_terms") {
-        Ok(t) => t,
-        Err(e) => return HttpResponse::InternalServerError().body(format!("Missing terms field for user {}", e)),
-    };
-
-    let is_admin: bool = match user_row.try_get("is_admin") {
-        Ok(a) => a,
-        Err(e) => return HttpResponse::InternalServerError().body(format!("Missing is_admin field for user {}", e)),
-    };
-
-    let last_logged_in: Option<DateTime<Utc>> = match user_row.try_get("last_login_at") {
-        Ok(l) => l,
-        Err(_) => None,
-    };
-
-    let last_logged_in = last_logged_in.map_or_else(
-        || None,
-        |l| Some(l.to_rfc3339()),
-    );
-
-    HttpResponse::Ok().json(serde_json::json!({
-        "id": id,
-        "username": username,
-        "email": email,
-        "created_at": created_at.to_rfc3339(),
-        "last_logged_in": last_logged_in,
-        "terms": terms,
-        "is_admin": is_admin
-    }))
+    HttpResponse::Ok().json(user_row.to_json())
 }
 
 #[post("login")]
 async fn user_login(repo: Data<Repositories>, payload: Json<LoginRequest>, jwt: Data<JwtManager>) -> HttpResponse {
 
-    let user_row = match repo.user.get_user_username(&payload.username).await {
+    let user_row = match repo.user.get_user_username_authentication(&payload.username).await {
         Ok(row) => row,
         Err(_) => return HttpResponse::NotFound().body("User not found"),
     };
 
-    let password: String = match user_row.try_get("password") {
-        Ok(p) => p,
-        Err(_) => return HttpResponse::InternalServerError().body("Missing password field"),
-    };
+    let password: String = user_row.password.unwrap();
 
     if !(bcrypt::verify(&payload.password, &password)).unwrap() {
         return HttpResponse::Unauthorized().body("Username or password is incorrect");
     }
 
-    let id: i32 = match user_row.try_get("id") {
-        Ok(id) => id,
-        Err(_) => return HttpResponse::InternalServerError().body("User not found"),
-    };
+    let id: i32 = user_row.id;
 
-    let token = match jwt.generate_token(&payload.username, id) {
+    let token = match jwt.generate_token(&user_row.username, id) {
         Ok(t) => t,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to generate token"),
     };
