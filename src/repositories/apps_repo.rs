@@ -5,6 +5,7 @@ use async_trait::async_trait;
 
 use crate::dberror::DbError;
 use crate::repository::Repository;
+use crate::tables::apps::Apps;
 
 #[derive(Clone)]
 pub struct AppsRepo {
@@ -15,34 +16,76 @@ impl AppsRepo {
     pub fn new(client: Arc<Mutex<Client>>) -> Self {
         Self { client }
     }
-
-    pub async fn get_apps(&self) -> Result<String, DbError> {
+    
+    pub async fn get_app_by_id(&self, id: i32) -> Result<Apps, DbError> {
         let client = self.client.lock().await;
 
         let rows = client
-            .query("SELECT * FROM apps", &[])
+            .query("SELECT * FROM apps WHERE id = $1", &[&id])
             .await
             .map_err(DbError::from)?;
 
-        if let Some(row) = rows.get(0) {
-            Ok(row.get(0))
+        if let Some(row) = rows.first() {
+            let app = Apps {
+                id: row.get("id"),
+                name: row.get("name"),
+                description: row.get("description"),
+                github_url: row.get("github_url"),
+                image_url: row.get("image_url"),
+                created_at: row.get("created_at"),
+                updated_at: row.get("updated_at"),
+                is_active: row.get("is_active"),
+            };
+            Ok(app)
         } else {
             Err(DbError::NotFound)
         }
+    }
+
+    pub async fn get_apps_by_user_id(&self, user_id: i32) -> Result<Vec<Apps>, DbError> {
+        let client = self.client.lock().await;
+
+        let rows = client
+            .query("
+            SELECT *
+                FROM apps
+                JOIN user ON apps.user_id = user.id
+                WHERE user.id = $1",
+            &[&user_id])
+            .await
+            .map_err(DbError::from)?;
+
+        let mut apps = Vec::new();
+        for row in rows {
+            let app = Apps {
+                id: row.get("id"),
+                name: row.get("name"),
+                description: row.get("description"),
+                github_url: row.get("github_url"),
+                image_url: row.get("image_url"),
+                created_at: row.get("created_at"),
+                updated_at: row.get("updated_at"),
+                is_active: row.get("is_active"),
+            };
+            apps.push(app);
+        }
+        Ok(apps)
+
+        
     }
 
     pub async fn add_app(
         &self,
         name: &str,
         description: &str,
-        link: &str,
+        github_url: Option<&str>,
         image_url: &str) -> Result<(), DbError> {
         let client = self.client.lock().await;
 
         client
             .execute(
-                "INSERT INTO apps (name, description, link, image_url) VALUES ($1, $2, $3, $4)",
-                &[&name, &description, &link, &image_url],
+                "INSERT INTO apps (name, description, github_url, image_url) VALUES ($1, $2, $3, $4)",
+                &[&name, &description, &github_url, &image_url],
             )
             .await
             .map_err(DbError::from)?;

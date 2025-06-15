@@ -1,33 +1,44 @@
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use actix_web::web::Data;
 
 use crate::repository::Repositories;
 
-#[get("")]
-async fn get_apps(repo: Data<Repositories>) -> HttpResponse {
-  match repo.apps.get_apps().await {
-      Ok(vessel_name) => HttpResponse::Ok().json(serde_json::json!({ "name": vessel_name })),
-      Err(e) => HttpResponse::InternalServerError().body(
-          format!("Failed to retrieve app: {}", e)
-      ),
-  }
+#[get("/{id}")]
+async fn get_app_by_id(req: HttpRequest, repo: Data<Repositories>) -> HttpResponse {
+    let id: i32 = req.match_info().get("id")
+        .and_then(|id| id.parse().ok())
+        .unwrap_or(0);
+
+    match repo.apps.get_app_by_id(id).await {
+        Ok(app) => HttpResponse::Ok().json(app),
+        Err(e) => HttpResponse::InternalServerError().body(
+            format!("Failed to retrieve app by ID: {}", e)
+        ),
+    }
+}
+
+#[get("/user/{id}")]
+async fn get_apps_by_user_id(req: HttpRequest, repo: Data<Repositories>) -> HttpResponse {
+    let id: i32 = req.match_info().get("id")
+        .and_then(|id| id.parse().ok())
+        .unwrap_or(0);
+
+    match repo.apps.get_apps_by_user_id(id).await {
+        Ok(app) => HttpResponse::Ok().json(app),
+        Err(e) => HttpResponse::InternalServerError().body(
+            format!("Failed to retrieve app by ID: {}", e)
+        ),
+    }
 }
 
 #[post("")]
-async fn create_app(repo: Data<Repositories>, app_data: web::Json<serde_json::Value>) -> HttpResponse {
-    let name = app_data.get("name").and_then(|v| v.as_str()).unwrap_or("");
-    let description = app_data.get("description").and_then(|v| v.as_str()).unwrap_or("");
-    let link = app_data.get("link").and_then(|v| v.as_str()).unwrap_or("");
-    let image_url = app_data.get("image_url").and_then(|v| v.as_str()).unwrap_or("");
-
-    match repo.apps.add_app(name, description, link, image_url).await {
-        Ok(_) => HttpResponse::Created().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to create app: {}", e)),
-    }
+async fn create_app(repo: Data<Repositories>, ) -> HttpResponse {
+    HttpResponse::NotImplemented().body("Create app endpoint not implemented yet")
 }
 
 pub fn scope() -> actix_web::Scope {
     web::scope("/api/apps")
-        .service(get_apps)
-        /* .service(create_vessel) */
+        .service(get_app_by_id)
+        .service(get_apps_by_user_id)
+        .service(create_app)
 }

@@ -1,3 +1,7 @@
+use serde::Serialize;
+
+
+#[derive(Serialize)]
 pub struct Apps {
   pub id: i32,
   pub name: String,
