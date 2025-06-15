@@ -65,7 +65,7 @@ impl UserRepo {
             let email: String = row.get("email");
             let created_at: chrono::DateTime<chrono::Utc> = row.get("created_at");
             let last_logged_in: Option<chrono::DateTime<chrono::Utc>> = row.get("last_login_at");
-            let terms: bool = row.get("accepted_terms");
+            let terms: bool = row.get("terms");
             let is_admin: bool = row.get("is_admin");
             let password: Option<String> = row.get("password");
 
@@ -95,7 +95,7 @@ impl UserRepo {
 
         let rows = client
             .execute(
-                "INSERT INTO users (username, email, password, accepted_terms) VALUES ($1, $2, $3, $4)",
+                "INSERT INTO users (username, email, password, terms) VALUES ($1, $2, $3, $4)",
                 &[&username, &email, &password, &terms],
             )
             .await
