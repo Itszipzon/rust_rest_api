@@ -3,7 +3,12 @@ use actix_web::{
     web::{self, Data, Json},
 };
 
-use crate::{jwt::jwt::JwtManager, repository::Repositories, requests::login_request::LoginRequest};
+use crate::{
+    jwt::jwt::JwtManager,
+    repository::Repositories,
+    requests::{login_request::LoginRequest, register_request::RegisterRequest},
+    tools::{is_valid_email, is_valid_username},
+};
 
 #[get("")]
 async fn get_user(
@@ -35,9 +40,16 @@ async fn get_user(
 }
 
 #[post("login")]
-async fn user_login(repo: Data<Repositories>, payload: Json<LoginRequest>, jwt: Data<JwtManager>) -> HttpResponse {
-
-    let user_row = match repo.user.get_user_username_authentication(&payload.username).await {
+async fn user_login(
+    repo: Data<Repositories>,
+    payload: Json<LoginRequest>,
+    jwt: Data<JwtManager>,
+) -> HttpResponse {
+    let user_row = match repo
+        .user
+        .get_user_username_authentication(&payload.username)
+        .await
+    {
         Ok(row) => row,
         Err(_) => return HttpResponse::NotFound().body("User not found"),
     };
@@ -58,8 +70,71 @@ async fn user_login(repo: Data<Repositories>, payload: Json<LoginRequest>, jwt: 
     HttpResponse::Ok().body(token)
 }
 
+#[post("register")]
+async fn user_register(repo: Data<Repositories>, payload: Json<RegisterRequest>) -> HttpResponse {
+    if !is_valid_username(&payload.username) {
+        return HttpResponse::BadRequest().body("Invalid username");
+    }
+
+    if !is_valid_email(&payload.email) {
+        return HttpResponse::BadRequest().body("Invalid email");
+    }
+
+    if payload.password.len() < 8 {
+        return HttpResponse::BadRequest().body("Password must be at least 8 characters long");
+    }
+
+    if !payload.terms {
+        return HttpResponse::BadRequest().body("You must accept the terms and conditions");
+    }
+
+    let hashed_password = match bcrypt::hash(&payload.password, bcrypt::DEFAULT_COST) {
+        Ok(p) => p,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to hash password"),
+    };
+
+    if repo
+        .user
+        .user_exists_by_username(&payload.username)
+        .await
+        .unwrap_or(false)
+    {
+        return HttpResponse::Conflict().body("Username already exists");
+    }
+
+    if repo
+        .user
+        .user_exists_by_email(&payload.email)
+        .await
+        .unwrap_or(false)
+    {
+        return HttpResponse::Conflict().body("Email already exists");
+    }
+
+    match repo
+        .user
+        .register_user(
+            payload.username.clone(),
+            payload.email.clone(),
+            hashed_password,
+            payload.terms,
+        )
+        .await
+    {
+        Ok(_) => HttpResponse::Created().body("User registered successfully"),
+        Err(e) => {
+            if e.contains("duplicate key value violates unique constraint") {
+                HttpResponse::Conflict().body("Username or email already exists")
+            } else {
+                HttpResponse::InternalServerError().body("Failed to register user")
+            }
+        }
+    }
+}
+
 pub fn scope() -> actix_web::Scope {
     web::scope("/api/users")
         .service(get_user)
         .service(user_login)
+        .service(user_register)
 }

@@ -29,3 +29,46 @@ pub fn table_name_from_statement(statement: &str) -> String {
     }
     "Unknown".to_string()
 }
+
+pub fn is_valid_username(username: &str) -> bool {
+    let len = username.len();
+
+    if len < 3 || len > 20 {
+        return false;
+    }
+
+    if username.contains('@') || username.contains('\\') || username.contains('/') {
+        return false;
+    }
+
+    true
+}
+
+pub fn is_valid_email(email: &str) -> bool {
+    let len = email.len();
+
+    if len < 5 || len > 254 {
+        return false;
+    }
+
+    if email.contains(' ') || email.contains('\\') || email.contains('/') {
+        return false;
+    }
+
+    let parts: Vec<&str> = email.split('@').collect();
+    if parts.len() != 2 {
+        return false;
+    }
+
+    let (local, domain) = (parts[0], parts[1]);
+
+    if local.is_empty() || domain.is_empty() {
+        return false;
+    }
+
+    if !domain.contains('.') {
+        return false;
+    }
+
+    true
+}
