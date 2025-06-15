@@ -44,8 +44,6 @@ impl DbPool {
 
         let tables = fs::read_to_string(path).await;
 
-        println!("Reading SQL file...");
-
         let statements = tables
             .as_ref()
             .unwrap()

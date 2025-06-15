@@ -26,16 +26,16 @@ impl AppsRepo {
             .map_err(DbError::from)?;
 
         if let Some(row) = rows.first() {
-            let app = Apps {
-                id: row.get("id"),
-                name: row.get("name"),
-                description: row.get("description"),
-                github_url: row.get("github_url"),
-                image_url: row.get("image_url"),
-                created_at: row.get("created_at"),
-                updated_at: row.get("updated_at"),
-                is_active: row.get("is_active"),
-            };
+            let app = Apps::new(
+                row.get("id"),
+                row.get("name"),
+                row.get("description"),
+                row.get("created_at"),
+                row.get("updated_at"),
+                row.get("is_active"),
+                row.get("image_name"),
+                row.get("github_url"),
+            );
             Ok(app)
         } else {
             Err(DbError::NotFound)
@@ -62,7 +62,7 @@ impl AppsRepo {
                 name: row.get("name"),
                 description: row.get("description"),
                 github_url: row.get("github_url"),
-                image_url: row.get("image_url"),
+                image_name: row.get("image_name"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
                 is_active: row.get("is_active"),
@@ -79,13 +79,14 @@ impl AppsRepo {
         name: &str,
         description: &str,
         github_url: Option<&str>,
-        image_url: &str) -> Result<(), DbError> {
+        image_url: &str,
+        user_id: i32) -> Result<(), DbError> {
         let client = self.client.lock().await;
 
         client
             .execute(
-                "INSERT INTO apps (name, description, github_url, image_url) VALUES ($1, $2, $3, $4)",
-                &[&name, &description, &github_url, &image_url],
+                "INSERT INTO apps (name, description, github_url, image_url, user_id) VALUES ($1, $2, $3, $4, $5)",
+                &[&name, &description, &github_url, &image_url, &user_id],
             )
             .await
             .map_err(DbError::from)?;

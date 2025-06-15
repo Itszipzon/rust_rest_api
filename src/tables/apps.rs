@@ -9,7 +9,7 @@ pub struct Apps {
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub updated_at: chrono::DateTime<chrono::Utc>,
   pub is_active: bool,
-  pub image_url: String,
+  pub image_name: String,
   pub github_url: Option<String>,
 }
 
@@ -21,7 +21,7 @@ impl Apps {
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
     is_active: bool,
-    image_url: String,
+    image_name: String,
     github_url: Option<String>,
   ) -> Self {
     Apps {
@@ -31,7 +31,7 @@ impl Apps {
       created_at,
       updated_at,
       is_active,
-      image_url,
+      image_name,
       github_url,
     }
   }
@@ -44,7 +44,7 @@ impl Apps {
       "created_at": self.created_at.to_rfc3339(),
       "updated_at": self.updated_at.to_rfc3339(),
       "is_active": self.is_active,
-      "image_url": self.image_url,
+      "image_name": self.image_name,
       "github_url": self.github_url
     })
   }

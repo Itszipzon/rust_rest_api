@@ -1,3 +1,9 @@
+use std::io::Write;
+use actix_multipart::Multipart;
+use mime_guess::get_mime_extensions_str;
+use uuid::Uuid;
+use futures_util::StreamExt;
+
 pub fn table_name_from_statement(statement: &str) -> String {
   let protected_statement_words = [
         "CREATE",
@@ -71,4 +77,48 @@ pub fn is_valid_email(email: &str) -> bool {
     }
 
     true
+}
+
+pub async fn save_image(image: &mut Multipart, image_type: &str) -> Result<String, String> {
+
+    let mut image_name = String::new();
+
+    while let Some(item) = image.next().await {
+        let mut field = match item {
+            Ok(f) => f,
+            Err(_) => return Err("Error reading multipart field".to_string()),
+        };
+
+        let content_disposition = field.content_disposition();
+        let field_name = content_disposition.unwrap().get_name().unwrap_or("");
+
+        if field_name == "image" {
+            let original_filename = content_disposition
+                .unwrap()
+                .get_filename()
+                .unwrap_or("file");
+            let content_type = field.content_type().unwrap().to_string();
+
+            let extension = get_mime_extensions_str(&content_type)
+                .and_then(|exts| exts.first().map(|e| format!(".{}", e)))
+                .unwrap_or_default();
+
+            let new_filename = format!("{}{}", Uuid::new_v4(), extension);
+            println!(
+                "Original filename: {original_filename}, New: {new_filename}, Type: {content_type}"
+            );
+
+            // Save file
+            let filepath = format!("./media/images/{}/{}", image_type, new_filename);
+            let mut f = std::fs::File::create(&filepath).unwrap();
+            while let Some(chunk) = field.next().await {
+                let data = chunk.unwrap();
+                f.write_all(&data).unwrap();
+            }
+
+            image_name = new_filename;
+        }
+    }
+    Ok(image_name)
+
 }
