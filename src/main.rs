@@ -12,7 +12,7 @@ mod dberror;
 mod repository;
 mod jwt;
 mod tools;
-mod user;
+mod tables;
 mod requests;
 
 #[actix_web::main]

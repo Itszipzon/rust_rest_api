@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use tokio::sync::Mutex;
 use tokio_postgres::Client;
 
-use crate::{repository::Repository, user::user::User};
+use crate::{repository::Repository, tables::user::User};
 
 #[derive(Clone)]
 pub struct UserRepo {

@@ -2,7 +2,6 @@ use actix_web::{
     HttpRequest, HttpResponse, get, post,
     web::{self, Data, Json},
 };
-use chrono::{DateTime, Utc};
 
 use crate::{jwt::jwt::JwtManager, repository::Repositories, requests::login_request::LoginRequest};
 
