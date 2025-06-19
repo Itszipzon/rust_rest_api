@@ -3,7 +3,7 @@ use db::DbPool;
 use dotenv::dotenv;
 use std::{env, sync::Arc};
 
-use crate::{jwt::jwt::JwtManager, repositories::apps_repo::AppsRepo, repository::Repositories};
+use crate::{jwt::jwt::JwtManager, repositories::apps_repo::AppsRepo, repository::{Repositories, Repository}};
 
 mod api;
 mod db;
@@ -47,6 +47,8 @@ async fn main() -> std::io::Result<()> {
         apps: Arc::new(AppsRepo::new(db_pool_data.get_client())),
         user: Arc::new(repositories::user_repo::UserRepo::new(db_pool_data.get_client())),
     });
+
+    let _ = repos.create_tables().await;
 
     let jwt_manager = web::Data::new(JwtManager::new());
 

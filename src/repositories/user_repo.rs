@@ -134,4 +134,27 @@ impl UserRepo {
 }
 
 #[async_trait]
-impl Repository for UserRepo {}
+impl Repository for UserRepo {
+    async fn create_table(&self) -> Result<(), String> {
+        let client = self.client.lock().await;
+
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(50) UNIQUE NOT NULL,
+                    email VARCHAR(100) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    last_login_at TIMESTAMP WITH TIME ZONE,
+                    terms BOOLEAN DEFAULT FALSE,
+                    is_admin BOOLEAN DEFAULT FALSE
+                )",
+                &[],
+            )
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
+    }
+}

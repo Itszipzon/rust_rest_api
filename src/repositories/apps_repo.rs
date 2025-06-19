@@ -95,4 +95,27 @@ impl AppsRepo {
 }
 
 #[async_trait]
-impl Repository for AppsRepo {}
+impl Repository for AppsRepo {
+    async fn create_table(&self) -> Result<(), String> {
+        let client = self.client.lock().await;
+
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS apps (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    description TEXT,
+                    github_url VARCHAR(255),
+                    image_name VARCHAR(255),
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_active BOOLEAN DEFAULT TRUE
+                )",
+                &[],
+            )
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+}

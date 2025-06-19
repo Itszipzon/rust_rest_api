@@ -1,12 +1,7 @@
-use std::path::Path;
 use std::sync::Arc;
-use tokio::fs;
 use tokio::sync::Mutex;
 use tokio_postgres::Error as PgError;
 use tokio_postgres::{Client, NoTls};
-
-use crate::dberror::DbError;
-use crate::tools;
 
 #[derive(Clone)]
 pub struct DbPool {
@@ -25,8 +20,6 @@ impl DbPool {
             }
         });
 
-        let _ = DbPool::initiate_tables(&client).await;
-
         println!("Database connection established successfully!");
 
         Ok(DbPool {
@@ -36,37 +29,5 @@ impl DbPool {
 
     pub fn get_client(&self) -> Arc<Mutex<Client>> {
         self.client.clone()
-    }
-
-    async fn initiate_tables(client: &Client) -> Result<(), DbError> {
-
-        let path = Path::new("database/tables.sql");
-
-        let tables = fs::read_to_string(path).await;
-
-        let statements = tables
-            .as_ref()
-            .unwrap()
-            .split(';')
-            .map(str::trim)
-            .filter(|stmt| !stmt.is_empty());
-
-
-        for (_, statement) in statements.enumerate() {
-            println!("Trying to create table: {}", tools::table_name_from_statement(statement));
-            client.execute(statement, &[]).await?;
-        }
-
-        let user_insert = "INSERT INTO users (username, email, password) VALUES ($1, $2, $3);";
-
-        let password = bcrypt::hash("12345678", bcrypt::DEFAULT_COST)
-            .map_err(|e| DbError::HashingError(e.to_string()))?;
-
-        println!("Inserting default user...");
-        client
-            .execute(user_insert, &[&"admin", &"rune.molander@hotmail.com", &password])
-            .await?;
-
-        Ok(())
     }
 }
