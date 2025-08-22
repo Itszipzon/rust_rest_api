@@ -3,31 +3,32 @@ use tokio::sync::Mutex;
 use tokio_postgres::Error as PgError;
 use tokio_postgres::{Client, NoTls};
 
+use crate::log;
+
 #[derive(Clone)]
 pub struct DbPool {
-    client: Arc<Mutex<Client>>,
+  client: Arc<Mutex<Client>>,
 }
 
 impl DbPool {
-    // Initialize a new database connection
-    pub async fn new(connection_string: &str) -> Result<DbPool, PgError> {
-        let (client, connection) = tokio_postgres::connect(connection_string, NoTls).await?;
+  // Initialize a new database connection
+  pub async fn new(connection_string: &str) -> Result<DbPool, PgError> {
+    let (client, connection) = tokio_postgres::connect(connection_string, NoTls).await?;
 
-        println!("Connected to the database at {}", connection_string);
-        tokio::spawn(async move {
-            if let Err(e) = connection.await {
-                eprintln!("Connection error: {}", e);
-            }
-        });
+    tokio::spawn(async move {
+      if let Err(e) = connection.await {
+        log::error(&format!("Connection error: {}", e));
+      }
+    });
 
-        println!("Database connection established successfully!");
+    log::info("Database connection established successfully!", true);
 
-        Ok(DbPool {
-            client: Arc::new(Mutex::new(client)),
-        })
-    }
+    Ok(DbPool {
+      client: Arc::new(Mutex::new(client)),
+    })
+  }
 
-    pub fn get_client(&self) -> Arc<Mutex<Client>> {
-        self.client.clone()
-    }
+  pub fn get_client(&self) -> Arc<Mutex<Client>> {
+    self.client.clone()
+  }
 }

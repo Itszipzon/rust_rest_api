@@ -1,9 +1,9 @@
 use serde::Serialize;
-
+use uuid::Uuid;
 
 #[derive(Serialize)]
 pub struct Apps {
-  pub id: i32,
+  pub id: Uuid,
   pub name: String,
   pub description: String,
   pub created_at: chrono::DateTime<chrono::Utc>,
@@ -15,7 +15,7 @@ pub struct Apps {
 
 impl Apps {
   pub fn new(
-    id: i32,
+    id: Uuid,
     name: String,
     description: String,
     created_at: chrono::DateTime<chrono::Utc>,
